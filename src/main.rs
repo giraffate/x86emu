@@ -40,6 +40,10 @@ fn get_sign_code8(emu: &Emulator, index: usize) -> i8 {
     emu.memory[emu.eip + index] as i8
 }
 
+fn get_sign_code32(emu: &Emulator, index: usize) -> i32 {
+    get_code32(emu, index) as i32
+}
+
 fn mov_r32_imm32(emu: &mut Emulator) {
     let reg: u8 = get_code8(emu, 0) - 0xB8;
     let value: u32 = get_code32(emu, 1);
@@ -50,6 +54,11 @@ fn mov_r32_imm32(emu: &mut Emulator) {
 fn short_jump(emu: &mut Emulator) {
     let diff: i8 = get_sign_code8(emu, 1);
     emu.eip = (emu.eip as i8 + diff + 2) as usize;
+}
+
+fn near_jump(emu: &mut Emulator) {
+    let diff: i32 = get_sign_code32(emu, 1);
+    emu.eip = (emu.eip as i32 + diff + 5) as usize;
 }
 
 type InstFunc = fn(&mut Emulator);
@@ -77,6 +86,7 @@ fn init_instructions(instructions: &mut Insts) {
     for i in 0..8 {
         instructions[0xB8 + i] = mov_r32_imm32;
     }
+    instructions[0xE9] = near_jump;
     instructions[0xEB] = short_jump;
 }
 
@@ -88,7 +98,7 @@ fn main() {
         process::exit(1);
     }
 
-    let mut emu = create_emu(0x0000, 0x7c00);
+    let mut emu = create_emu(0x7c00, 0x7c00);
 
     let path = Path::new(&args[1]);
     let display = path.display();
@@ -96,7 +106,8 @@ fn main() {
         Err(why) => panic!("couldn't read {}: {}", display, why),
         Ok(binary) => binary,
     };
-    emu.memory = binary;
+    emu.memory = vec![0; 0x7c00];
+    emu.memory.extend(binary);
 
     let mut instructions: Insts = [undefined; 256];
     init_instructions(&mut instructions);

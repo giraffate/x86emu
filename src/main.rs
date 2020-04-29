@@ -6,6 +6,7 @@ use std::process;
 mod emulator;
 mod function;
 mod instruction;
+mod modrm;
 
 use emulator::*;
 use function::*;

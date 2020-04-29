@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::emulator::*;
 
 pub fn get_code8(emu: &Emulator, index: usize) -> u8 {
@@ -18,4 +20,34 @@ pub fn get_sign_code8(emu: &Emulator, index: usize) -> i8 {
 
 pub fn get_sign_code32(emu: &Emulator, index: usize) -> i32 {
     get_code32(emu, index) as i32
+}
+
+pub fn get_register32(emu: &Emulator, index: usize) -> u32 {
+    emu.registers[index]
+}
+
+pub fn set_register32(emu: &mut Emulator, index: usize, value: u32) {
+    emu.registers[index] = value;
+}
+
+pub fn set_memory8(emu: &mut Emulator, address: u32, value: u32) {
+    emu.memory[address as usize] = (value & 0xff).try_into().unwrap();
+}
+
+pub fn set_memory32(emu: &mut Emulator, address: u32, value: u32) {
+    for i in 0..4 {
+        set_memory8(emu, address, value >> (i * 8));
+    }
+}
+
+pub fn get_memory8(emu: &Emulator, address: u32) -> u32 {
+    emu.memory[address as usize] as u32
+}
+
+pub fn get_memory32(emu: &Emulator, address: u32) -> u32 {
+    let mut ret = 0;
+    for i in 0..4 {
+        ret |= get_memory8(emu, address) << (8 * i);
+    }
+    ret
 }

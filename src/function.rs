@@ -1,5 +1,7 @@
 use std::convert::TryInto;
 
+use crate::*;
+
 use crate::emulator::*;
 
 pub fn get_code8(emu: &Emulator, index: usize) -> u8 {
@@ -49,5 +51,18 @@ pub fn get_memory32(emu: &Emulator, address: u32) -> u32 {
     for i in 0..4 {
         ret |= get_memory8(emu, address) << (8 * i);
     }
+    ret
+}
+
+pub fn push32(emu: &mut Emulator, value: u32) {
+    let address = get_register32(emu, ESP) - 4;
+    set_register32(emu, ESP, address);
+    set_memory32(emu, address, value);
+}
+
+pub fn pop32(emu: &mut Emulator) -> u32 {
+    let address = get_register32(emu, ESP);
+    let ret = get_memory32(emu, address);
+    set_register32(emu, ESP, address + 4);
     ret
 }

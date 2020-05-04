@@ -1,6 +1,7 @@
 use std::process;
 use std::convert::TryInto;
 
+use crate::*;
 use crate::emulator::*;
 use crate::function::*;
 use crate::modrm::*;
@@ -53,6 +54,18 @@ pub fn pop_r32(emu: &mut Emulator) {
     let value = pop32(emu);
     set_register32(emu, reg.try_into().unwrap(), value);
     emu.eip += 1;
+}
+
+pub fn push_imm32(emu: &mut Emulator) {
+    let value = get_code32(emu, 1);
+    push32(emu, value);
+    emu.eip += 5;
+}
+
+pub fn push_imm8(emu: &mut Emulator) {
+    let value = get_code8(emu, 1);
+    push32(emu, value.into());
+    emu.eip += 2;
 }
 
 pub fn add_rm32_r32(emu: &mut Emulator) {
@@ -118,6 +131,14 @@ pub fn ret(emu: &mut Emulator) {
     emu.eip = pop32(emu).try_into().unwrap();
 }
 
+pub fn leave(emu: &mut Emulator) {
+    let ebp: u32 = get_register32(emu, EBP);
+    set_register32(emu, ESP, ebp);
+    let value = pop32(emu);
+    set_register32(emu, EBP, value);
+    emu.eip += 1;
+}
+
 pub fn short_jump(emu: &mut Emulator) {
     let diff: i8 = get_sign_code8(emu, 1);
     emu.eip = (emu.eip as i8 + diff + 2) as usize;
@@ -136,6 +157,10 @@ pub fn init_instructions(instructions: &mut Insts) {
     for i in 0..8 {
         instructions[0x58 + i] = pop_r32;
     }
+
+    instructions[0x68] = push_imm32;
+    instructions[0x6A] = push_imm8;
+
     instructions[0x83] = code_83;
     instructions[0x89] = mov_rm32_r32;
     instructions[0x8B] = mov_r32_rm32;
@@ -145,6 +170,7 @@ pub fn init_instructions(instructions: &mut Insts) {
 
     instructions[0xC3] = ret;
     instructions[0xC7] = mov_rm32_imm32;
+    instructions[0xC9] = leave;
 
     instructions[0xE8] = call_rel32;
     instructions[0xE9] = near_jump;

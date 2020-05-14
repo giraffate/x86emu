@@ -29,8 +29,26 @@ pub fn get_sign_code32(emu: &Emulator, index: usize) -> i32 {
     get_code32(emu, index) as i32
 }
 
+pub fn get_register8(emu: &Emulator, index: usize) -> u8 {
+    if index < 4 {
+        (emu.registers[index] & 0xff) as u8
+    } else {
+        ((emu.registers[index - 4] >> 8) & 0xff) as u8
+    }
+}
+
 pub fn get_register32(emu: &Emulator, index: usize) -> u32 {
     emu.registers[index]
+}
+
+pub fn set_register8(emu: &mut Emulator, index: usize, value: u8) {
+    if index < 4 {
+        let r = emu.registers[index] & 0xffffff00;
+        emu.registers[index] = r | value as u32;
+    } else {
+        let r = emu.registers[index - 4] & 0xffff00ff;
+        emu.registers[index - 4] = r | ((value as u32) << 8);
+    }
 }
 
 pub fn set_register32(emu: &mut Emulator, index: usize, value: u32) {

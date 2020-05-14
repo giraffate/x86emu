@@ -3,6 +3,7 @@ use std::process;
 
 use crate::emulator::*;
 use crate::function::*;
+use crate::io::*;
 use crate::modrm::*;
 use crate::*;
 
@@ -99,6 +100,20 @@ pub fn sub_rm32_imm8(emu: &mut Emulator, modrm: &ModRM) {
     let result = rm32 as u64 - imm8 as u64;
     set_rm32(emu, modrm, rm32 - imm8);
     update_eflags_sub(emu, rm32, imm8, result);
+}
+
+pub fn in_al_dx(emu: &mut Emulator) {
+    let address = get_register32(emu, EDX) & 0xffff;
+    let value = io_in8(address);
+    set_register32(emu, AL, value.into());
+    emu.eip += 1;
+}
+
+pub fn out_dx_al(emu: &mut Emulator) {
+    let address = get_register32(emu, EDX) & 0xffff;
+    let value = get_register32(emu, AL);
+    io_out8(address, value as u8);
+    emu.eip += 1;
 }
 
 pub fn inc_rm32(emu: &mut Emulator, modrm: &ModRM) {
@@ -302,5 +317,7 @@ pub fn init_instructions(instructions: &mut Insts) {
     instructions[0xE8] = call_rel32;
     instructions[0xE9] = near_jump;
     instructions[0xEB] = short_jump;
+    instructions[0xEC] = in_al_dx;
+    instructions[0xEE] = out_dx_al;
     instructions[0xFF] = code_ff;
 }

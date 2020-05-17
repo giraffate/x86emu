@@ -1,4 +1,4 @@
-use std::env;
+use clap::{App, Arg};
 use std::fs;
 use std::path::Path;
 use std::process;
@@ -52,16 +52,28 @@ fn dump_registers(emu: &Emulator) {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let matches = App::new("x86emu")
+        .arg(Arg::with_name("output").index(1))
+        .arg(Arg::new("quiet").short('q').long("quiet"))
+        .get_matches();
 
-    if args.len() != 2 {
-        println!("usage: px86 filename");
-        process::exit(1);
-    }
+    let output = match matches.value_of("output") {
+        Some(output) => output,
+        None => {
+            println!("usage: px86 filename");
+            process::exit(1);
+        }
+    };
+
+    let quiet = if matches.is_present("quiet") {
+        true
+    } else {
+        false
+    };
 
     let mut emu = create_emu(0x7c00, 0x7c00);
 
-    let path = Path::new(&args[1]);
+    let path = Path::new(&output);
     let display = path.display();
     let binary = match fs::read(path) {
         Err(why) => panic!("couldn't read {}: {}", display, why),
@@ -77,7 +89,9 @@ fn main() {
         let code = get_code8(&emu, 0) as usize;
         // dump_registers(&emu);
 
-        println!("EIP = {}, Code = {:x}", emu.eip, code);
+        if !quiet {
+            println!("EIP = {}, Code = {:x}", emu.eip, code);
+        }
 
         if instructions[code] as usize == undefined as usize {
             println!("Not implemented: {:x}", code);

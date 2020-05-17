@@ -1,8 +1,7 @@
 use std::convert::TryInto;
 
-use crate::*;
-
 use crate::emulator::*;
+use crate::*;
 
 const CARRY_FLAG: u32 = 1;
 const ZERO_FLAG: u32 = 1 << 6;
@@ -44,7 +43,7 @@ pub fn get_register32(emu: &Emulator, index: usize) -> u32 {
 pub fn set_register8(emu: &mut Emulator, index: usize, value: u8) {
     if index < 4 {
         let r = emu.registers[index] & 0xffffff00;
-        emu.registers[index] = r | value as u32;
+        emu.registers[index] = r | (value as u32);
     } else {
         let r = emu.registers[index - 4] & 0xffff00ff;
         emu.registers[index - 4] = r | ((value as u32) << 8);
@@ -61,7 +60,7 @@ pub fn set_memory8(emu: &mut Emulator, address: u32, value: u32) {
 
 pub fn set_memory32(emu: &mut Emulator, address: u32, value: u32) {
     for i in 0..4 {
-        set_memory8(emu, address, value >> (i * 8));
+        set_memory8(emu, address + i, value >> (i * 8));
     }
 }
 
@@ -72,7 +71,7 @@ pub fn get_memory8(emu: &Emulator, address: u32) -> u32 {
 pub fn get_memory32(emu: &Emulator, address: u32) -> u32 {
     let mut ret = 0;
     for i in 0..4 {
-        ret |= get_memory8(emu, address) << (8 * i);
+        ret |= get_memory8(emu, address + i) << (8 * i);
     }
     ret
 }
@@ -143,7 +142,7 @@ pub fn update_eflags_sub(emu: &mut Emulator, v1: u32, v2: u32, result: u64) {
     let sign2 = v2 >> 31;
     let signr = (result >> 31) & 1;
 
-    set_carry(emu, result >> 32 != 0);
+    set_carry(emu, (result >> 32) != 0);
     set_zero(emu, result == 0);
     set_sign(emu, signr != 0);
     set_overflow(emu, sign1 != sign2 && sign1 as u64 != signr);

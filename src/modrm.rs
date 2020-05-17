@@ -80,12 +80,30 @@ pub fn calc_memory_address(emu: &mut Emulator, modrm: &ModRM) -> u32 {
     }
 }
 
+pub fn set_rm8(emu: &mut Emulator, modrm: &ModRM, value: u8) {
+    if modrm.modval == 3 {
+        set_register8(emu, modrm.rm as usize, value);
+    } else {
+        let address = calc_memory_address(emu, modrm);
+        set_memory8(emu, address, value as u32);
+    }
+}
+
 pub fn set_rm32(emu: &mut Emulator, modrm: &ModRM, value: u32) {
     if modrm.modval == 3 {
         set_register32(emu, modrm.rm as usize, value);
     } else {
         let address = calc_memory_address(emu, modrm);
         set_memory32(emu, address, value);
+    }
+}
+
+pub fn get_rm8(emu: &mut Emulator, modrm: &ModRM) -> u8 {
+    if modrm.modval == 3 {
+        get_register8(emu, modrm.rm as usize)
+    } else {
+        let address = calc_memory_address(emu, modrm);
+        get_memory8(emu, address) as u8
     }
 }
 
@@ -98,8 +116,16 @@ pub fn get_rm32(emu: &mut Emulator, modrm: &ModRM) -> u32 {
     }
 }
 
+pub fn set_r8(emu: &mut Emulator, modrm: &ModRM, value: u8) {
+    set_register8(emu, modrm.reg_index as usize, value);
+}
+
 pub fn set_r32(emu: &mut Emulator, modrm: &ModRM, value: u32) {
     set_register32(emu, modrm.reg_index as usize, value);
+}
+
+pub fn get_r8(emu: &Emulator, modrm: &ModRM) -> u8 {
+    get_register8(emu, modrm.reg_index as usize)
 }
 
 pub fn get_r32(emu: &Emulator, modrm: &ModRM) -> u32 {

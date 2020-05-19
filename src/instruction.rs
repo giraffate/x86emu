@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 use std::process;
 
+use crate::bios::*;
 use crate::emulator::*;
 use crate::function::*;
 use crate::io::*;
@@ -339,6 +340,20 @@ pub fn jle(emu: &mut Emulator) {
     emu.eip += diff as usize + 2;
 }
 
+pub fn swi(emu: &mut Emulator) {
+    let index = get_code8(emu, 1);
+    emu.eip += 2;
+
+    match index {
+        0x10 => {
+            bios_video(emu);
+        }
+        _ => {
+            println!("unknown interrupt: {:x}", index);
+        }
+    }
+}
+
 pub fn init_instructions(instructions: &mut Insts) {
     instructions[0x01] = add_rm32_r32;
 
@@ -386,6 +401,8 @@ pub fn init_instructions(instructions: &mut Insts) {
     instructions[0xC3] = ret;
     instructions[0xC7] = mov_rm32_imm32;
     instructions[0xC9] = leave;
+
+    instructions[0xCD] = swi;
 
     instructions[0xE8] = call_rel32;
     instructions[0xE9] = near_jump;
